@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/InsideU/go-module/handlers"
@@ -15,10 +16,12 @@ func main() {
 
 	l := log.New(os.Stdout, "product-api", log.LstdFlags)
 	hh := handlers.NewHello(l)
+	ph := handlers.NewProducts(l)
 	gh := handlers.NewGoodbye(l)
 	sm := http.NewServeMux()
 	sm.Handle("/", hh)
 	sm.Handle("/goodbye", gh)
+	sm.Handle("/products", ph)
 
 	s := &http.Server{
 		Addr:         ":8080",
@@ -33,9 +36,9 @@ func main() {
 			l.Fatal(err)
 		}
 	}()
-	sigChan := make(chan os.Signal)
+	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
-	signal.Notify(sigChan, os.Kill)
+	signal.Notify(sigChan, os.Kill, syscall.SIGTERM)
 
 	sig := <-sigChan
 	l.Println("Received graceful termination ", sig)
